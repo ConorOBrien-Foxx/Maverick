@@ -126,6 +126,15 @@ class Maverick {
         return Maverick.shuntingYard.system.get(op);
     }
     
+    static execEffect(effect, ...args){
+        let res;
+        if(effect instanceof Array){
+            res = effect[args.length - 1](...args);
+        } else
+            res = effect(...args);
+        return res;
+    }
+    
     static traverse(toks){
         let stack = [];
         for(let tok of toks){
@@ -143,11 +152,7 @@ class Maverick {
                 while(arity --> 0)
                     args.unshift(stack.pop());
                 let effect = Maverick.funcs.get(tok);
-                let res;
-                if(effect instanceof Array){
-                    res = effect[args.length - 1](...args);
-                } else
-                    res = effect(...args);
+                let res = Maverick.execEffect(effect, ...args);
                 stack.push(res);
             } else if(tok instanceof ShuntingOperator){
                 let arity = tok.arity;
@@ -155,10 +160,7 @@ class Maverick {
                 while(arity --> 0)
                     args.unshift(stack.pop());
                 let effect = tok.opts.effect;
-                if(effect instanceof Array){
-                    stack.push(effect[args.length - 1](...args));
-                } else
-                    stack.push(effect(...args));
+                stack.push(Maverick.execEffect(effect, ...args));
             }
         }
         return stack;
@@ -237,6 +239,8 @@ Maverick.shuntingYard = new ShuntingYard([
         variants: [2],
         associativity: "left",
         effect: (a, b) => {
+            if(a.length <= 2 || !a.reduce)
+                return a;
             return a.reduce((p, c) => b.opts.effect(p, c));
         },
     }),
