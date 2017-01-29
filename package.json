@@ -1,0 +1,28 @@
+{
+  "name": "maverick-lang",
+  "version": "1.0.0",
+  "description": "an esoteric language",
+  "main": "maverick.js",
+  "scripts": {
+    "test": "echo all is good"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ConorOBrien-Foxx/Maverick.git"
+  },
+  "keywords": [
+    "esoteric",
+    "language"
+  ],
+  "author": "conor-obrien",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ConorOBrien-Foxx/Maverick/issues"
+  },
+  "homepage": "https://github.com/ConorOBrien-Foxx/Maverick#readme",
+  "dependencies": {
+    "decimal.js": "^7.1.1",
+    "minimist": "^1.2.0",
+    "shunt.js": "^1.0.3"
+  }
+}
