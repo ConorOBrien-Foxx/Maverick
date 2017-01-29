@@ -140,6 +140,8 @@ class Maverick {
         for(let tok of toks){
             if(numberRegex.test(tok)){
                 stack.push(new Decimal(tok));
+            } else if(Maverick.vars.has(tok)){
+                stack.push(Maverick.vars.get(tok));
             } else if(tok[0] === "$"){
                 let k = Maverick.getOp(tok.slice(1)).clone();
                 k.toString = function(){
@@ -171,6 +173,11 @@ class Maverick {
     }
 }
 
+Maverick.truthy = (c) =>
+    Maverick.undef !== c &&
+    c.eq ? !c.eq(0) : true &&
+    Array.isArray(c) ? !!c.length : true;
+
 Maverick.outted = false;
 
 Maverick.funcs = new Map([
@@ -184,6 +191,18 @@ Maverick.funcs = new Map([
         Maverick.outted = true;
         process.stdout.write(flat(c).map(chr).join(""));
     }],
+    ["if", (c, tr, fa) => {
+        if(Maverick.truthy(c))
+            return tr;
+        else
+            return fa;
+    }],
+]);
+
+Maverick.undef = Symbol("undef");
+
+Maverick.vars = new Map([
+    ["undef", Maverick.undef],
 ]);
 
 Maverick.shuntingYard = new ShuntingYard([
@@ -229,7 +248,7 @@ Maverick.shuntingYard = new ShuntingYard([
         precedence: 1,
         variants: [2],
         associativity: "left",
-        effect: (a, b) => D(a.eq(b)),
+        effect: vectorize((a, b) => D(a.eq(b))),
     }),
     
     //---------PRECEDENCE 2---------//
@@ -239,7 +258,7 @@ Maverick.shuntingYard = new ShuntingYard([
         variants: [2],
         associativity: "left",
         effect: (a, b) => {
-            if(a.length <= 2 || !a.reduce)
+            if(a.length <= 1 || !a.reduce)
                 return a;
             return a.reduce((p, c) => b.opts.effect(p, c));
         },
@@ -310,8 +329,17 @@ Maverick.shuntingYard = new ShuntingYard([
         associativity: "left",
         effect: (a, b) => [...[].concat(a), b],
     }),
+    
+    //---------PRECEDENCE 20---------//
+    new ShuntingOperator({
+        name: ".",
+        precedence: 20,
+        variants: [2],
+        associativity: "left",
+        effect: (a, b) => a[b],
+    }),
 ], {
-    isLiteral: (e) => numberRegex.test(e) || e[0] === "$",
+    isLiteral: (e) => numberRegex.test(e) || e[0] === "$" || Maverick.vars.has(e),
     isFunction: (e) => {
         // console.log(e+[]);
         return Maverick.funcs.has(e) || e[0] === "$";
@@ -354,7 +382,7 @@ if(require.main === module){
     // console.log(Maverick.tokenize(prog).join(" "));
     // console.log(Maverick.parse(prog).join(" "));
     let res = Maverick.exec(prog);
-    if(res.length === 1) res = res.pop();
+    while(res && res.pop && res.length === 1) res = res.pop();
     if(args.out || !Maverick.outted)
         process.stdout.write(disp(res));
 }
