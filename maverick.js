@@ -169,13 +169,17 @@ class Maverick {
     }
 }
 
+Maverick.outted = false;
+
 Maverick.funcs = new Map([
     ["<>", (n = 0) => process.argv[+n - 2]],
     ["arg", (n = 0) => process.argv.slice(n + 2)],
     ["out", (...c) => {
+        Maverick.outted = true;
         process.stdout.write(c.join``);
     }],
     ["outc", (...c) => {
+        Maverick.outted = true;
         process.stdout.write(flat(c).map(chr).join(""));
     }],
 ]);
@@ -347,6 +351,6 @@ if(require.main === module){
     // console.log(Maverick.parse(prog).join(" "));
     let res = Maverick.exec(prog);
     if(res.length === 1) res = res.pop();
-    if(args.out)
-        console.log(disp(res));
+    if(args.out || !Maverick.outted)
+        process.stdout.write(disp(res));
 }
